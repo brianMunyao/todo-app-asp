@@ -1,0 +1,66 @@
+@using frontend.Models
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="todo-item @(MyTodo.IsComplete ? "done" : "")">
+    @if (MyTodo.IsComplete)
+    {
+        <i class="bi bi-check-circle-fill circles" @onclick="HandleCheck"></i>
+    }
+    else
+    {
+        <i class="bi bi-circle circles" @onclick="HandleCheck"></i>
+    }
+
+    @* @if (EditMode)
+        {
+        <input type="text" @bind-value="@TempText" @bind-value:event="onchange" />
+
+        <button type="button" class="app-btn app-btn-success btn-margin" @onclick="SaveEdit">
+        <i class="bi bi-check" style="font-size:25px;"></i>
+        </button>
+        }
+        else
+        {
+        <span>@MyTodo.Text</span>
+
+        <button type="button" class="app-btn app-btn-info btn-margin" @onclick="HandleEdit">
+        <i class="bi bi-pen"></i>
+        </button>
+        } *@
+    <span>@MyTodo.Text</span>
+
+    <button type="button" class="app-btn app-btn-error" @onclick="HandleDelete">
+        <i class="bi bi-trash-fill"></i>
+    </button>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public TodoItem MyTodo { get; set; }
+    public bool EditMode { get; set; }
+    public string TempText { get; set; }
+
+    [Parameter]
+    public Action OnCheck { get; set; }
+    private void HandleCheck() => OnCheck?.Invoke();
+
+    [Parameter]
+    public EventCallback<(TodoItem updatedTodo, string todoText)> OnUpdate { get; set; }
+    private void HandleEdit()
+    {
+        EditMode = true;
+        TempText = MyTodo.Text;
+    }
+    private async void SaveEdit(TodoItem updatedTodo, string todoText)
+    {
+        EditMode = false;
+        await OnUpdate.InvokeAsync((MyTodo, TempText));
+    }
+
+    [Parameter]
+    public Action OnDelete { get; set; }
+
+    private void HandleDelete() => OnDelete?.Invoke();
+}

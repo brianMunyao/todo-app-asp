@@ -1,0 +1,155 @@
+@using frontend.Services
+@using frontend.Models
+@using frontend.Components
+@using Microsoft.AspNetCore.Components.Web
+@inject TodosService todosService
+
+<div>
+    @if (!string.IsNullOrEmpty(ErrorValue))
+    {
+        <p class="msg-con error-con">
+            <i class="bi bi-x-circle-fill"></i> @ErrorValue
+        </p>
+    }
+
+    @if (!string.IsNullOrEmpty(SuccessValue))
+    {
+        <p class="msg-con success-con">
+            <i class="bi bi-check-circle-fill"></i> @SuccessValue
+        </p>
+    }
+
+    <div class="input-con">
+        <input type="text" placeholder="Add todo here" @bind-value="@InputValue" @bind-value:event="onchange" />
+        <button @onclick="HandleAddTodo">Add</button>
+    </div>
+
+
+    <div class="todos">
+        @if (Todos.Count > 0)
+        {
+            @foreach (var Todo in Todos)
+            {
+                <AppTodo MyTodo="@Todo" OnCheck="@(() => HandleCheck(Todo))" OnDelete="@(() => HandleDelete(Todo.Id))" />
+            }
+            @* OnUpdate="@HandleUpdate" *@
+        }
+        else
+        {
+            <p class="empty-list">No todos added</p>
+        }
+    </div>
+</div>
+
+@code {
+    public string InputValue { get; set; } = "";
+
+    public string SuccessValue { get; set; } = "";
+    public string ErrorValue { get; set; } = "";
+    private List<TodoItem> Todos = new List<TodoItem>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        List<TodoItem> temp = await todosService.GetTodos();
+        Todos = temp.OrderByDescending(x => DateTime.ParseExact(x.DateAdded, "dd/MM/yyyy HH:mm:ss", null)).ToList();
+    }
+
+    private async void HandleAddTodo()
+    {
+        try
+        {
+            TodoItem todoItem = await todosService.AddNewTodo(InputValue);
+            List<TodoItem> temp = Todos;
+            temp.Add(todoItem);
+
+            Todos = temp.OrderByDescending(x => DateTime.ParseExact(x.DateAdded, "dd/MM/yyyy HH:mm:ss", null)).ToList();
+            InputValue = "";
+            SuccessValue = "Todo added successfully";
+            StateHasChanged();
+
+            await Task.Delay(3000);
+            SuccessValue = "";
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            await Task.Delay(3000);
+            ErrorValue = e.Message;
+            StateHasChanged();
+        }
+    }
+
+    private async void HandleCheck(TodoItem Todo)
+    {
+        try
+        {
+            TodoItem updatedTodo = Todo;
+            updatedTodo.IsComplete = !updatedTodo.IsComplete;
+            TodoItem newTodo = await todosService.UpdateTodo(Todo.Id, updatedTodo);
+
+            Todos = Todos.Select(x => x.Id == Todo.Id ? updatedTodo : x).ToList();
+            SuccessValue = "Todo updated successfully";
+            StateHasChanged();
+
+            await Task.Delay(3000);
+            SuccessValue = "";
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            ErrorValue = e.Message;
+            StateHasChanged();
+            await Task.Delay(3000);
+            ErrorValue = "";
+            StateHasChanged();
+        }
+    }
+
+    private async void HandleUpdate(TodoItem Todo, string TodoText)
+    {
+        try
+        {
+            TodoItem updatedTodo = Todo;
+            updatedTodo.Text = TodoText;
+            TodoItem newTodo = await todosService.UpdateTodo(Todo.Id, updatedTodo);
+
+            Todos = Todos.Select(x => x.Id == Todo.Id ? updatedTodo : x).ToList();
+            SuccessValue = "Todo updated successfully";
+            StateHasChanged();
+
+            await Task.Delay(3000);
+            SuccessValue = "";
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            ErrorValue = e.Message;
+            StateHasChanged();
+            await Task.Delay(3000);
+            ErrorValue = "";
+            StateHasChanged();
+        }
+    }
+
+    private async void HandleDelete(string TodoId)
+    {
+        try
+        {
+            await todosService.DeleteTodo(TodoId);
+            List<TodoItem> temp = Todos.FindAll(x => x.Id != TodoId);
+            Todos = temp;
+            SuccessValue = "Todo deleted successfully";
+            StateHasChanged();
+
+            await Task.Delay(3000);
+            SuccessValue = "";
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            await Task.Delay(3000);
+            ErrorValue = e.Message;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,14 @@
+﻿@page
+@using frontend.Components
+@model IndexModel
+@{
+    ViewData["Title"] = "Todo App";
+}
+
+<div>
+
+</div>
+
+@(await Html.RenderComponentAsync<TodoList>(RenderMode.ServerPrerendered))
+
+<script src="_framework/blazor.server.js"></script>
